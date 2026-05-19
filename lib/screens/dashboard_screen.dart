@@ -6,7 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/product_provider.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
-import '../widgets/app_shell.dart';
+import '../widgets/app_shell.dart' show ImsCard, MetricCard;
 import '../utils/app_toast.dart';
 import '../widgets/common_widgets.dart';
 
@@ -78,17 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final productProvider = Provider.of<ProductProvider>(context);
     final counts = _summary?.counts;
 
-    return AppShell(
-      currentRoute: '/dashboard',
-      floatingActionButton: authProvider.isAdmin || authProvider.isStaff
-          ? FloatingActionButton.extended(
-              onPressed: () => Navigator.of(context).pushNamed('/add_product'),
-              backgroundColor: AppColors.primary,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('New Product', style: TextStyle(color: Colors.white)),
-            )
-          : null,
-      body: RefreshIndicator(
+    return RefreshIndicator(
         color: AppColors.primary,
         onRefresh: () async {
           await _loadData();
@@ -102,7 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                  colors: [AppColors.primary, Color(0xFF2563EB)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -219,8 +209,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: LoadingWidget()),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 

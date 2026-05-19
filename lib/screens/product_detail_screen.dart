@@ -77,8 +77,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return AppShell(
-      currentRoute: '/dashboard',
-      showDrawer: false,
       title: 'Product Details',
       actions: [
         if (_product != null)

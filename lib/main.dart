@@ -7,16 +7,14 @@ import 'providers/category_provider.dart';
 import 'providers/supplier_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/profile_screen.dart';
 import 'screens/product_detail_screen.dart';
 import 'screens/add_edit_product_screen.dart';
 import 'screens/category_list_screen.dart';
-import 'screens/supplier_list_screen.dart';
 import 'screens/category_form_screen.dart';
 import 'screens/supplier_form_screen.dart';
-import 'screens/product_list_screen.dart';
 import 'models/product.dart';
+import 'utils/constants.dart';
+import 'widgets/main_navigation_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +24,50 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  static ThemeData get _lightTheme => ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+          surface: AppColors.bgLight,
+        ),
+        scaffoldBackgroundColor: AppColors.bgDark,
+        fontFamily: 'Segoe UI',
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.bgLight,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          centerTitle: false,
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.bgLight,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.borderMuted),
+          ),
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 0,
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.bgLight,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -39,58 +81,16 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Inventory MS',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF1E3A8A),
-            primary: const Color(0xFF1E3A8A),
-            surface: const Color(0xFFFDFEFE),
-          ),
-          scaffoldBackgroundColor: const Color(0xFFE8EDF5),
-          fontFamily: 'Segoe UI',
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFFFDFEFE),
-            foregroundColor: Color(0xFF1A2340),
-            elevation: 0,
-            centerTitle: false,
-          ),
-          cardTheme: CardThemeData(
-            color: const Color(0xFFFDFEFE),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Color(0xFFD8DEE9)),
-            ),
-          ),
-          floatingActionButtonTheme: const FloatingActionButtonThemeData(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E3A8A),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFFFDFEFE),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-        ),
+        theme: _lightTheme,
         initialRoute: '/splash',
         routes: {
           '/splash': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
-          '/dashboard': (context) => const DashboardScreen(),
-          '/products': (context) => const ProductListScreen(),
-          '/profile': (context) => const ProfileScreen(),
+          '/dashboard': (context) => const MainNavigationShell(),
+          '/products': (context) => const MainNavigationShell(initialIndex: 1),
+          '/suppliers': (context) => const MainNavigationShell(initialIndex: 2),
+          '/profile': (context) => const MainNavigationShell(initialIndex: 3),
           '/categories': (context) => const CategoryListScreen(),
-          '/suppliers': (context) => const SupplierListScreen(),
           '/add_product': (context) => const AddEditProductScreen(),
         },
         onGenerateRoute: (settings) {
@@ -121,4 +121,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

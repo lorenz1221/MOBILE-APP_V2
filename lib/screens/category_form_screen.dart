@@ -71,8 +71,6 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   Widget build(BuildContext context) {
     final title = widget.category != null ? 'Edit Category' : 'New Category';
     return AppShell(
-      currentRoute: '/categories',
-      showDrawer: false,
       title: title,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

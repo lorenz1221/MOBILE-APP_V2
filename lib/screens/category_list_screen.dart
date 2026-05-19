@@ -54,18 +54,24 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
     final provider = context.watch<CategoryProvider>();
 
     return AppShell(
-      currentRoute: '/categories',
       title: 'Categories',
-      searchBar: SearchAppBarField(
-        hint: 'Search categories...',
-        initialQuery: provider.searchQuery,
-        onSearchChanged: (q) => provider.search(q),
-        onClear: () => provider.search(''),
-      ),
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: () => provider.fetchCategories(refresh: true),
-        child: _buildList(provider),
+      body: Column(
+        children: [
+          SearchAppBarField(
+            hint: 'Search categories...',
+            initialQuery: provider.searchQuery,
+            onSearchChanged: (q) => provider.search(q),
+            onClear: () => provider.search(''),
+          ),
+          Container(height: 1, color: AppColors.borderMuted),
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () => provider.fetchCategories(refresh: true),
+              child: _buildList(provider),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(),

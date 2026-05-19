@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../utils/app_toast.dart';
 import '../utils/constants.dart';
 import 'app_brand.dart';
 
+/// Scaffold wrapper for pushed routes (forms, detail screens).
 class AppShell extends StatelessWidget {
   final String? title;
   final Widget body;
   final List<Widget>? actions;
   final Widget? floatingActionButton;
-  final String currentRoute;
-  final bool showDrawer;
-  /// Optional search field rendered below the AppBar.
-  final Widget? searchBar;
   /// Footer slot — e.g. [PaginationFooter] for page buttons.
   final Widget? bottomBar;
 
@@ -23,9 +19,6 @@ class AppShell extends StatelessWidget {
     required this.body,
     this.actions,
     this.floatingActionButton,
-    required this.currentRoute,
-    this.showDrawer = true,
-    this.searchBar,
     this.bottomBar,
   });
 
@@ -36,28 +29,16 @@ class AppShell extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
-      drawer: showDrawer ? _AppDrawer(currentRoute: currentRoute) : null,
       appBar: AppBar(
         backgroundColor: AppColors.bgLight.withValues(alpha: 0.95),
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        bottom: searchBar != null
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(57),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    searchBar!,
-                    Container(height: 1, color: AppColors.borderMuted),
-                  ],
-                ),
-              )
-            : PreferredSize(
-                preferredSize: const Size.fromHeight(1),
-                child: Container(height: 1, color: AppColors.borderMuted),
-              ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: AppColors.borderMuted),
+        ),
         title: title != null
             ? Text(
                 title!,
@@ -117,132 +98,6 @@ class AppShell extends StatelessWidget {
       body: body,
       bottomNavigationBar: bottomBar,
       floatingActionButton: floatingActionButton,
-    );
-  }
-}
-
-class _AppDrawer extends StatelessWidget {
-  final String currentRoute;
-
-  const _AppDrawer({required this.currentRoute});
-
-  @override
-  Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    return Drawer(
-      backgroundColor: AppColors.bgLight,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
-              child: AppBrand(),
-            ),
-            const Divider(height: 1, color: AppColors.borderMuted),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                children: [
-                  _DrawerTile(
-                    icon: Icons.dashboard_outlined,
-                    label: 'Dashboard',
-                    route: '/dashboard',
-                    currentRoute: currentRoute,
-                  ),
-                  _DrawerTile(
-                    icon: Icons.inventory_2_outlined,
-                    label: 'Products',
-                    route: '/products',
-                    currentRoute: currentRoute,
-                  ),
-                  _DrawerTile(
-                    icon: Icons.category_outlined,
-                    label: 'Categories',
-                    route: '/categories',
-                    currentRoute: currentRoute,
-                  ),
-                  _DrawerTile(
-                    icon: Icons.local_shipping_outlined,
-                    label: 'Suppliers',
-                    route: '/suppliers',
-                    currentRoute: currentRoute,
-                  ),
-                  _DrawerTile(
-                    icon: Icons.person_outline,
-                    label: 'Profile',
-                    route: '/profile',
-                    currentRoute: currentRoute,
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: AppColors.borderMuted),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: ListTile(
-                leading: const Icon(Icons.logout, color: AppColors.danger),
-                title: const Text(
-                  'Logout',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.danger),
-                ),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                onTap: () async {
-                  final navigator = Navigator.of(context);
-                  await authProvider.logout();
-                  if (context.mounted) {
-                    AppToast.info(context, 'You have been signed out');
-                    navigator.pushNamedAndRemoveUntil('/login', (route) => false);
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DrawerTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String route;
-  final String currentRoute;
-
-  const _DrawerTile({
-    required this.icon,
-    required this.label,
-    required this.route,
-    required this.currentRoute,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final active = currentRoute == route;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: ListTile(
-        leading: Icon(icon, color: active ? AppColors.bgLight : AppColors.textPrimary, size: 20),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: active ? AppColors.bgLight : AppColors.textPrimary,
-            fontSize: 14,
-          ),
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        tileColor: active ? AppColors.primary : null,
-        onTap: () {
-          Navigator.pop(context);
-          if (!active) {
-            Navigator.pushReplacementNamed(context, route);
-          }
-        },
-      ),
     );
   }
 }

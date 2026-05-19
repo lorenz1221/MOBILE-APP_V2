@@ -4,7 +4,7 @@ import '../models/product.dart';
 import '../providers/auth_provider.dart';
 import '../providers/product_provider.dart';
 import '../utils/constants.dart';
-import '../widgets/app_shell.dart';
+import '../widgets/app_shell.dart' show ImsCard;
 import '../widgets/common_widgets.dart';
 import '../widgets/pagination_controls.dart';
 import '../widgets/search_app_bar.dart';
@@ -18,10 +18,10 @@ class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key, this.useFooterPagination = false});
 
   @override
-  State<ProductListScreen> createState() => _ProductListScreenState();
+  State<ProductListScreen> createState() => ProductListScreenState();
 }
 
-class _ProductListScreenState extends State<ProductListScreen> {
+class ProductListScreenState extends State<ProductListScreen> {
   final ScrollController _scrollController = ScrollController();
   final _infiniteScroll = InfiniteScrollMixin();
   bool _hasInitialized = false;
@@ -64,6 +64,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
     context.read<ProductProvider>().search(query);
   }
 
+  Future<void> openAddForm() => _openForm();
+
   Future<void> _openForm([Product? product]) async {
     if (product != null) {
       await Navigator.of(context).pushNamed('/edit_product', arguments: product);
@@ -79,38 +81,32 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final provider = context.watch<ProductProvider>();
     final canEdit = auth.isAdmin || auth.isStaff;
 
-    return AppShell(
-      currentRoute: '/products',
-      title: 'Products',
-      searchBar: SearchAppBarField(
-        hint: 'Search by name, SKU...',
-        initialQuery: provider.searchQuery,
-        onSearchChanged: _onSearch,
-        onClear: () => _onSearch(''),
-      ),
-      bottomBar: widget.useFooterPagination
-          ? PaginationFooter(
-              currentPage: provider.displayPage,
-              lastPage: provider.lastPage,
-              total: provider.total,
-              isLoading: provider.isLoading,
-              onPrevious: provider.goToPreviousPage,
-              onNext: provider.goToNextPage,
-            )
-          : null,
-      floatingActionButton: canEdit
-          ? FloatingActionButton.extended(
-              onPressed: () => _openForm(),
-              backgroundColor: AppColors.primary,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Product', style: TextStyle(color: Colors.white)),
-            )
-          : null,
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: () => provider.fetchProducts(refresh: true),
-        child: _buildBody(provider, canEdit),
-      ),
+    return Column(
+      children: [
+        SearchAppBarField(
+          hint: 'Search by name, SKU...',
+          initialQuery: provider.searchQuery,
+          onSearchChanged: _onSearch,
+          onClear: () => _onSearch(''),
+        ),
+        Container(height: 1, color: AppColors.borderMuted),
+        Expanded(
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () => provider.fetchProducts(refresh: true),
+            child: _buildBody(provider, canEdit),
+          ),
+        ),
+        if (widget.useFooterPagination)
+          PaginationFooter(
+            currentPage: provider.displayPage,
+            lastPage: provider.lastPage,
+            total: provider.total,
+            isLoading: provider.isLoading,
+            onPrevious: provider.goToPreviousPage,
+            onNext: provider.goToNextPage,
+          ),
+      ],
     );
   }
 

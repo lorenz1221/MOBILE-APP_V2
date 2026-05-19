@@ -90,8 +90,6 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
   Widget build(BuildContext context) {
     final title = widget.supplier != null ? 'Edit Supplier' : 'New Supplier';
     return AppShell(
-      currentRoute: '/suppliers',
-      showDrawer: false,
       title: title,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

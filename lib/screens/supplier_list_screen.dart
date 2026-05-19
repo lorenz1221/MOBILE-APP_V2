@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/supplier_provider.dart';
 import '../utils/constants.dart';
-import '../widgets/app_shell.dart';
+import '../widgets/app_shell.dart' show ImsCard;
 import '../widgets/common_widgets.dart';
 import '../widgets/pagination_controls.dart';
 import '../widgets/search_app_bar.dart';
@@ -53,26 +53,23 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<SupplierProvider>();
 
-    return AppShell(
-      currentRoute: '/suppliers',
-      title: 'Suppliers',
-      searchBar: SearchAppBarField(
-        hint: 'Search suppliers...',
-        initialQuery: provider.searchQuery,
-        onSearchChanged: (q) => provider.search(q),
-        onClear: () => provider.search(''),
-      ),
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: () => provider.fetchSuppliers(refresh: true),
-        child: _buildList(provider),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Supplier', style: TextStyle(color: Colors.white)),
-      ),
+    return Column(
+      children: [
+        SearchAppBarField(
+          hint: 'Search suppliers...',
+          initialQuery: provider.searchQuery,
+          onSearchChanged: (q) => provider.search(q),
+          onClear: () => provider.search(''),
+        ),
+        Container(height: 1, color: AppColors.borderMuted),
+        Expanded(
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () => provider.fetchSuppliers(refresh: true),
+            child: _buildList(provider),
+          ),
+        ),
+      ],
     );
   }
 
