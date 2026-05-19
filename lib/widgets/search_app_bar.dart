@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
+import '../core/constants/constants.dart';
 
 /// Search field shown below the main [AppBar] (or inline when expanded).
 class SearchAppBarField extends StatefulWidget {

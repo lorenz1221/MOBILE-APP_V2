@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
+import '../core/constants/constants.dart';
 
 /// Option A: classic Previous / Next footer with page indicator.
 class PaginationFooter extends StatelessWidget {

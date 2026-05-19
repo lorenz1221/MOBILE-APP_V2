@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/user.dart';
 import '../providers/auth_provider.dart';
-import '../utils/app_toast.dart';
-import '../utils/constants.dart';
+import '../core/utils/app_toast.dart';
+import '../core/constants/constants.dart';
 import '../widgets/app_shell.dart';
 
 class ProfileScreen extends StatelessWidget {

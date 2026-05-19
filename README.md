@@ -1,17 +1,29 @@
-# mobile_app
+# Inventory Management System — Mobile App
 
-A new Flutter project.
+Flutter companion app for the Laravel inventory API.
 
-## Getting Started
+## Project structure (`lib/`)
 
-This project is a starting point for a Flutter application.
+```
+lib/
+├── core/
+│   ├── constants/     # AppColors, text styles, API constants
+│   ├── network/       # ApiClient (HTTP layer)
+│   ├── router/        # AppRoutes & AppRouter
+│   ├── storage/       # TokenStorage (SharedPreferences)
+│   ├── theme/         # AppTheme
+│   └── utils/         # AppToast
+├── models/
+├── providers/
+├── screens/
+├── services/          # ApiService (business API calls)
+├── widgets/
+├── app.dart           # MaterialApp + providers
+└── main.dart          # Entry point
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Run
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Copy `.env.example` to `.env` and set `API_BASE_URL`.
+2. `flutter pub get`
+3. `flutter run`

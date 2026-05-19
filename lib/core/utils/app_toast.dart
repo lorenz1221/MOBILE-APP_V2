@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'constants.dart';
+import '../constants/app_colors.dart';
 
 enum ToastType { success, error, info, warning }
 
@@ -65,8 +65,7 @@ class _ToastWidget extends StatefulWidget {
   State<_ToastWidget> createState() => _ToastWidgetState();
 }
 
-class _ToastWidgetState extends State<_ToastWidget>
-    with SingleTickerProviderStateMixin {
+class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _slide;
   late Animation<double> _fade;

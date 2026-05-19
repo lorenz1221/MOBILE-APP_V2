@@ -1,39 +1,23 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import '../core/network/api_client.dart';
 import '../models/api_response.dart';
 import '../models/dashboard_summary.dart';
 import '../models/user.dart';
 import '../models/product.dart';
 
 class ApiService {
-  static final String baseUrl = dotenv.get('API_BASE_URL', fallback: 'http://127.0.0.1:8000/api');
-  static const String tokenKey = 'auth_token';
+  final ApiClient _client;
 
-  Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(tokenKey);
-  }
+  ApiService({ApiClient? client}) : _client = client ?? ApiClient();
 
-  Future<void> setToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(tokenKey, token);
-  }
+  String get baseUrl => _client.baseUrl;
 
-  Future<void> removeToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(tokenKey);
-  }
+  Future<String?> getToken() => _client.getToken();
 
-  Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
-    final token = includeAuth ? await getToken() : null;
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
+  Future<void> setToken(String token) => _client.setToken(token);
+
+  Future<void> removeToken() => _client.removeToken();
 
   String? _extractToken(Map<String, dynamic> json) {
     final dynamic data = json['data'] ?? json;
@@ -60,13 +44,10 @@ class ApiService {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> login(String email, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/login'),
-      headers: await _getHeaders(includeAuth: false),
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+    final response = await _client.post(
+      '/login',
+      body: {'email': email, 'password': password},
+      includeAuth: false,
     );
 
     final apiResponse = _mapResponse(response);
@@ -85,15 +66,15 @@ class ApiService {
     String password,
     String passwordConfirmation,
   ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/register'),
-      headers: await _getHeaders(includeAuth: false),
-      body: jsonEncode({
+    final response = await _client.post(
+      '/register',
+      body: {
         'name': name,
         'email': email,
         'password': password,
         'password_confirmation': passwordConfirmation,
-      }),
+      },
+      includeAuth: false,
     );
 
     final apiResponse = _mapResponse(response);
@@ -107,13 +88,10 @@ class ApiService {
   }
 
   Future<ApiResponse<User>> getMe() async {
-    final candidates = ['/v1/auth/me', '/auth/me', '/me', '/user'];
+    const candidates = ['/v1/auth/me', '/auth/me', '/me', '/user'];
     for (final path in candidates) {
       try {
-        final response = await http.get(
-          Uri.parse('$baseUrl$path'),
-          headers: await _getHeaders(),
-        );
+        final response = await _client.get(path);
 
         if (response.statusCode == 404) {
           continue;
@@ -138,13 +116,10 @@ class ApiService {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> logout() async {
-    final candidates = ['/v1/auth/logout', '/auth/logout', '/logout'];
+    const candidates = ['/v1/auth/logout', '/auth/logout', '/logout'];
     for (final path in candidates) {
       try {
-        final response = await http.post(
-          Uri.parse('$baseUrl$path'),
-          headers: await _getHeaders(),
-        );
+        final response = await _client.post(path);
 
         if (response.statusCode == 404) {
           continue;
@@ -175,12 +150,11 @@ class ApiService {
     final queryParams = {
       'page': page.toString(),
       'limit': limit.toString(),
-      if (search?.isNotEmpty == true) 'search': search,
+      if (search?.isNotEmpty == true) 'search': search!,
       if (categoryId != null) 'category_id': categoryId.toString(),
     };
 
-    final uri = Uri.parse('$baseUrl/v1/products').replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: await _getHeaders());
+    final response = await _client.get('/v1/products', queryParams: queryParams);
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => PaginatedResponse<Product>.fromJson(d, (item) => Product.fromJson(item)));
@@ -194,11 +168,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Product>> getProduct(int id) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/v1/products/$id'),
-      headers: await _getHeaders(),
-    );
-
+    final response = await _client.get('/v1/products/$id');
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => Product.fromJson(d));
@@ -212,12 +182,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Product>> createProduct(Map<String, dynamic> productData) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/v1/products'),
-      headers: await _getHeaders(),
-      body: jsonEncode(productData),
-    );
-
+    final response = await _client.post('/v1/products', body: productData);
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => Product.fromJson(d));
@@ -231,12 +196,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Product>> updateProduct(int id, Map<String, dynamic> productData) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/v1/products/$id'),
-      headers: await _getHeaders(),
-      body: jsonEncode(productData),
-    );
-
+    final response = await _client.put('/v1/products/$id', body: productData);
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => Product.fromJson(d));
@@ -250,11 +210,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> deleteProduct(int id) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/v1/products/$id'),
-      headers: await _getHeaders(),
-    );
-
+    final response = await _client.delete('/v1/products/$id');
     final data = jsonDecode(response.body);
     if (data is Map<String, dynamic>) {
       return ApiResponse.fromJson(data, (d) => <String, dynamic>{});
@@ -264,11 +220,7 @@ class ApiService {
   }
 
   Future<ApiResponse<DashboardSummary>> getDashboardSummary() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/v1/dashboard/summary'),
-      headers: await _getHeaders(),
-    );
-
+    final response = await _client.get('/v1/dashboard/summary');
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => DashboardSummary.fromJson(d as Map<String, dynamic>));
@@ -292,8 +244,7 @@ class ApiService {
       if (search?.isNotEmpty == true) 'search': search!,
     };
 
-    final uri = Uri.parse('$baseUrl/v1/categories').replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: await _getHeaders());
+    final response = await _client.get('/v1/categories', queryParams: queryParams);
     final data = jsonDecode(response.body);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -314,12 +265,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Category>> createCategory(Map<String, dynamic> categoryData) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/v1/categories'),
-      headers: await _getHeaders(),
-      body: jsonEncode(categoryData),
-    );
-
+    final response = await _client.post('/v1/categories', body: categoryData);
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => Category.fromJson(d));
@@ -333,12 +279,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Category>> updateCategory(int id, Map<String, dynamic> categoryData) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/v1/categories/$id'),
-      headers: await _getHeaders(),
-      body: jsonEncode(categoryData),
-    );
-
+    final response = await _client.put('/v1/categories/$id', body: categoryData);
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => Category.fromJson(d));
@@ -352,11 +293,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> deleteCategory(int id) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/v1/categories/$id'),
-      headers: await _getHeaders(),
-    );
-
+    final response = await _client.delete('/v1/categories/$id');
     final data = jsonDecode(response.body);
     if (data is Map<String, dynamic>) {
       return ApiResponse.fromJson(data, (d) => <String, dynamic>{});
@@ -376,8 +313,7 @@ class ApiService {
       if (search?.isNotEmpty == true) 'search': search!,
     };
 
-    final uri = Uri.parse('$baseUrl/v1/suppliers').replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: await _getHeaders());
+    final response = await _client.get('/v1/suppliers', queryParams: queryParams);
     final data = jsonDecode(response.body);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -398,12 +334,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Supplier>> createSupplier(Map<String, dynamic> supplierData) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/v1/suppliers'),
-      headers: await _getHeaders(),
-      body: jsonEncode(supplierData),
-    );
-
+    final response = await _client.post('/v1/suppliers', body: supplierData);
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => Supplier.fromJson(d));
@@ -417,12 +348,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Supplier>> updateSupplier(int id, Map<String, dynamic> supplierData) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/v1/suppliers/$id'),
-      headers: await _getHeaders(),
-      body: jsonEncode(supplierData),
-    );
-
+    final response = await _client.put('/v1/suppliers/$id', body: supplierData);
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return ApiResponse.fromJson(data, (d) => Supplier.fromJson(d));
@@ -436,11 +362,7 @@ class ApiService {
   }
 
   Future<ApiResponse<Map<String, dynamic>>> deleteSupplier(int id) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/v1/suppliers/$id'),
-      headers: await _getHeaders(),
-    );
-
+    final response = await _client.delete('/v1/suppliers/$id');
     final data = jsonDecode(response.body);
     if (data is Map<String, dynamic>) {
       return ApiResponse.fromJson(data, (d) => <String, dynamic>{});

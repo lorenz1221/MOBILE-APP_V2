@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/category_provider.dart';
-import '../utils/constants.dart';
-import '../utils/app_toast.dart';
+import '../core/constants/constants.dart';
+import '../core/utils/app_toast.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/common_widgets.dart';
 

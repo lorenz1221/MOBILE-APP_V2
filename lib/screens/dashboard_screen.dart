@@ -5,9 +5,9 @@ import '../models/product.dart';
 import '../providers/auth_provider.dart';
 import '../providers/product_provider.dart';
 import '../services/api_service.dart';
-import '../utils/constants.dart';
+import '../core/constants/constants.dart';
 import '../widgets/app_shell.dart' show ImsCard, MetricCard;
-import '../utils/app_toast.dart';
+import '../core/utils/app_toast.dart';
 import '../widgets/common_widgets.dart';
 
 class DashboardScreen extends StatefulWidget {

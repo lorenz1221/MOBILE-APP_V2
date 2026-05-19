@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/category_provider.dart';
-import '../utils/constants.dart';
+import '../core/constants/constants.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/pagination_controls.dart';

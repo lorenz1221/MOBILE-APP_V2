@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/auth_provider.dart';
 import '../providers/product_provider.dart';
-import '../utils/constants.dart';
+import '../core/constants/constants.dart';
 import '../widgets/app_shell.dart' show ImsCard;
 import '../widgets/common_widgets.dart';
 import '../widgets/pagination_controls.dart';

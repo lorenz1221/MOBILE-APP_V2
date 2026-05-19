@@ -5,7 +5,7 @@ import '../screens/dashboard_screen.dart';
 import '../screens/product_list_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/supplier_list_screen.dart';
-import '../utils/constants.dart';
+import '../core/constants/constants.dart';
 import 'app_brand.dart';
 
 class MainNavigationShell extends StatefulWidget {

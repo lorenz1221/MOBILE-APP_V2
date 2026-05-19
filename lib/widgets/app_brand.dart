@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
+import '../core/constants/constants.dart';
 
 class AppBrand extends StatelessWidget {
   final bool compact;

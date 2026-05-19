@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../utils/constants.dart';
+import '../core/constants/constants.dart';
 import 'app_brand.dart';
 
 /// Scaffold wrapper for pushed routes (forms, detail screens).
