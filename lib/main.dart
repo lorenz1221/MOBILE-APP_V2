@@ -15,6 +15,7 @@ import 'screens/category_list_screen.dart';
 import 'screens/supplier_list_screen.dart';
 import 'screens/category_form_screen.dart';
 import 'screens/supplier_form_screen.dart';
+import 'screens/product_list_screen.dart';
 import 'models/product.dart';
 
 Future<void> main() async {
@@ -43,12 +44,27 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF1E3A8A),
             primary: const Color(0xFF1E3A8A),
+            surface: const Color(0xFFFDFEFE),
           ),
           scaffoldBackgroundColor: const Color(0xFFE8EDF5),
+          fontFamily: 'Segoe UI',
           appBarTheme: const AppBarTheme(
             backgroundColor: Color(0xFFFDFEFE),
             foregroundColor: Color(0xFF1A2340),
             elevation: 0,
+            centerTitle: false,
+          ),
+          cardTheme: CardThemeData(
+            color: const Color(0xFFFDFEFE),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFFD8DEE9)),
+            ),
+          ),
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
@@ -56,12 +72,14 @@ class MyApp extends StatelessWidget {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
             ),
           ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
             fillColor: const Color(0xFFFDFEFE),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
         initialRoute: '/splash',
@@ -69,6 +87,7 @@ class MyApp extends StatelessWidget {
           '/splash': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
           '/dashboard': (context) => const DashboardScreen(),
+          '/products': (context) => const ProductListScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/categories': (context) => const CategoryListScreen(),
           '/suppliers': (context) => const SupplierListScreen(),

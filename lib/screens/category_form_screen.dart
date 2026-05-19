@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/category_provider.dart';
 import '../utils/constants.dart';
+import '../utils/app_toast.dart';
+import '../widgets/app_shell.dart';
 import '../widgets/common_widgets.dart';
 
 class CategoryFormScreen extends StatefulWidget {
@@ -55,25 +57,36 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     setState(() => _isLoading = false);
 
     if (success && mounted) {
-      Navigator.of(context).pop();
+      AppToast.success(
+        context,
+        widget.category != null ? 'Category updated successfully' : 'Category created successfully',
+      );
+      Navigator.of(context).pop(true);
+    } else if (mounted && categoryProvider.error != null) {
+      AppToast.error(context, categoryProvider.error!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final title = widget.category != null ? 'Edit Category' : 'New Category';
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: AppColors.primary,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    return AppShell(
+      currentRoute: '/categories',
+      showDrawer: false,
+      title: title,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: ImsCard(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  widget.category != null ? 'Update category information' : 'Add a new product category',
+                  style: AppTextStyles.caption.copyWith(fontSize: 13),
+                ),
+                const SizedBox(height: 20),
               CustomTextField(
                 controller: _nameController,
                 label: 'Name',
@@ -90,11 +103,13 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
                 text: widget.category != null ? 'Update Category' : 'Create Category',
                 onPressed: _saveCategory,
                 isLoading: _isLoading,
+                icon: widget.category != null ? Icons.save_outlined : Icons.add_circle_outline,
               ),
             ],
           ),
         ),
       ),
+    ),
     );
   }
 }

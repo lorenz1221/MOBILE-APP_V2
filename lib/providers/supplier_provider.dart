@@ -1,42 +1,94 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
+import 'paginated_list_mixin.dart';
 
-class SupplierProvider with ChangeNotifier {
+class SupplierProvider with ChangeNotifier, PaginatedListMixin<Supplier> {
   final ApiService _apiService = ApiService();
-  final List<Supplier> _suppliers = [];
-  bool _isLoading = false;
-  String? _error;
 
-  List<Supplier> get suppliers => _suppliers;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  List<Supplier> get suppliers => items;
 
+  /// GET /v1/suppliers?page=1&limit=15&search=query
   Future<void> fetchSuppliers({bool refresh = false}) async {
-    if (_isLoading) return;
-    _isLoading = true;
-    _error = null;
-    if (refresh) {
-      _suppliers.clear();
-    }
+    if (refresh) resetPagination();
+    if (!hasMore && !refresh) return;
+    if (isLoading || isLoadingMore) return;
+
+    final pageToFetch = currentPage;
+    final loadingMore = !refresh && items.isNotEmpty;
+    isLoading = !loadingMore;
+    isLoadingMore = loadingMore;
+    error = null;
     notifyListeners();
 
     try {
-      final response = await _apiService.getSuppliers();
+      final response = await _apiService.getSuppliers(
+        page: pageToFetch,
+        limit: 15,
+        search: searchQuery.isEmpty ? null : searchQuery,
+      );
+
       if (response.status == 'Success' && response.data != null) {
-        if (refresh) {
-          _suppliers.clear();
-        }
-        _suppliers.addAll(response.data!);
+        applyPaginatedResult(response.data!, refresh: refresh);
       } else {
-        _error = response.message;
+        setError(response.message.isNotEmpty ? response.message : 'Failed to load suppliers.');
       }
     } catch (e) {
-      _error = 'Failed to load suppliers: $e';
+      setError('Failed to load suppliers: $e');
     }
 
-    _isLoading = false;
+    isLoading = false;
+    isLoadingMore = false;
     notifyListeners();
+  }
+
+  Future<void> fetchPage(int page) async {
+    if (isLoading) return;
+    isLoading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.getSuppliers(
+        page: page,
+        limit: 15,
+        search: searchQuery.isEmpty ? null : searchQuery,
+      );
+
+      if (response.status == 'Success' && response.data != null) {
+        final paginated = response.data!;
+        items
+          ..clear()
+          ..addAll(paginated.data);
+        lastPage = paginated.lastPage;
+        total = paginated.total;
+        currentPage = page + 1;
+        hasMore = page < lastPage;
+      } else {
+        setError(response.message);
+      }
+    } catch (e) {
+      setError('Failed to load suppliers: $e');
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> search(String query) async {
+    searchQuery = query;
+    resetPagination();
+    await fetchSuppliers(refresh: true);
+  }
+
+  void goToPreviousPage() {
+    final page = displayPage;
+    if (page > 1) fetchPage(page - 1);
+  }
+
+  void goToNextPage() {
+    final page = displayPage;
+    if (page < lastPage) fetchPage(page + 1);
   }
 
   Future<bool> createSupplier(
@@ -57,13 +109,12 @@ class SupplierProvider with ChangeNotifier {
         'is_active': isActive,
       });
       if (response.status == 'Success' && response.data != null) {
-        _suppliers.insert(0, response.data!);
-        notifyListeners();
+        await fetchSuppliers(refresh: true);
         return true;
       }
-      _error = response.message;
+      setError(response.message);
     } catch (e) {
-      _error = 'Failed to create supplier: $e';
+      setError('Failed to create supplier: $e');
     }
     notifyListeners();
     return false;
@@ -88,16 +139,16 @@ class SupplierProvider with ChangeNotifier {
         'is_active': isActive,
       });
       if (response.status == 'Success' && response.data != null) {
-        final index = _suppliers.indexWhere((supplier) => supplier.id == id);
+        final index = items.indexWhere((s) => s.id == id);
         if (index != -1) {
-          _suppliers[index] = response.data!;
+          items[index] = response.data!;
           notifyListeners();
         }
         return true;
       }
-      _error = response.message;
+      setError(response.message);
     } catch (e) {
-      _error = 'Failed to update supplier: $e';
+      setError('Failed to update supplier: $e');
     }
     notifyListeners();
     return false;
@@ -107,20 +158,20 @@ class SupplierProvider with ChangeNotifier {
     try {
       final response = await _apiService.deleteSupplier(id);
       if (response.status == 'Success') {
-        _suppliers.removeWhere((supplier) => supplier.id == id);
+        items.removeWhere((s) => s.id == id);
         notifyListeners();
         return true;
       }
-      _error = response.message;
+      setError(response.message);
     } catch (e) {
-      _error = 'Failed to delete supplier: $e';
+      setError('Failed to delete supplier: $e');
     }
     notifyListeners();
     return false;
   }
 
   void clearError() {
-    _error = null;
+    error = null;
     notifyListeners();
   }
 }

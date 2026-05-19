@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
-import '../services/api_service.dart';
+import '../providers/category_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/common_widgets.dart';
+import '../widgets/pagination_controls.dart';
+import '../widgets/search_app_bar.dart';
 
 class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({super.key});
@@ -12,102 +16,146 @@ class CategoryListScreen extends StatefulWidget {
 }
 
 class _CategoryListScreenState extends State<CategoryListScreen> {
-  final ApiService _apiService = ApiService();
-  final List<Category> _categories = [];
-  bool _isLoading = false;
-  String? _error;
+  final ScrollController _scrollController = ScrollController();
+  final _infiniteScroll = InfiniteScrollMixin();
+  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchCategories();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasInitialized && mounted) {
+        _hasInitialized = true;
+        context.read<CategoryProvider>().fetchCategories(refresh: true);
+      }
+    });
+    _infiniteScroll.attachInfiniteScroll(
+      controller: _scrollController,
+      onLoadMore: () => context.read<CategoryProvider>().fetchCategories(),
+    );
   }
 
-  Future<void> _fetchCategories({bool refresh = false}) async {
-    if (_isLoading) return;
+  @override
+  void dispose() {
+    _infiniteScroll.detachInfiniteScroll();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
-    setState(() {
-      if (refresh) {
-        _categories.clear();
-      }
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final response = await _apiService.getCategories();
-      if (response.status == 'Success' && response.data != null) {
-        setState(() {
-          if (refresh) {
-            _categories.clear();
-          }
-          _categories.addAll(response.data!);
-        });
-      } else {
-        setState(() {
-          _error = response.message;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to load categories: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+  Future<void> _openForm([Category? category]) async {
+    final result = await Navigator.of(context).pushNamed('/category_form', arguments: category);
+    if (result == true && mounted) {
+      context.read<CategoryProvider>().fetchCategories(refresh: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<CategoryProvider>();
+
     return AppShell(
       currentRoute: '/categories',
       title: 'Categories',
-      body: _isLoading && _categories.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => _fetchCategories(refresh: true),
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _categories.length + (_isLoading ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == _categories.length) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-
-                    final category = _categories[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: ListTile(
-                        title: Text(category.name),
-                        subtitle: category.description != null ? Text(category.description!) : null,
-                      ),
-                    );
-                  },
-                ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).pushNamed('/category_form'),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+      searchBar: SearchAppBarField(
+        hint: 'Search categories...',
+        initialQuery: provider.searchQuery,
+        onSearchChanged: (q) => provider.search(q),
+        onClear: () => provider.search(''),
       ),
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () => provider.fetchCategories(refresh: true),
+        child: _buildList(provider),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openForm(),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Add Category', style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _buildList(CategoryProvider provider) {
+    if (provider.isInitialLoading) {
+      return ListView(children: const [SizedBox(height: 200, child: LoadingWidget())]);
+    }
+
+    if (provider.error != null && provider.categories.isEmpty) {
+      return ListView(
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.55,
+            child: CustomErrorWidget(
+              message: provider.error!,
+              onRetry: () => provider.fetchCategories(refresh: true),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (provider.categories.isEmpty) {
+      return ListView(
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.category_outlined, size: 56, color: AppColors.textMuted.withValues(alpha: 0.4)),
+                const SizedBox(height: 16),
+                Text(
+                  provider.searchQuery.isNotEmpty ? 'No matching categories' : 'No categories yet',
+                  style: AppTextStyles.headline.copyWith(fontSize: 18),
+                ),
+                const SizedBox(height: 8),
+                Text('Tap + to create your first category', style: AppTextStyles.caption),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: provider.categories.length + 1,
+      itemBuilder: (context, index) {
+        if (index == provider.categories.length) {
+          return PaginationListLoader(
+            isLoadingMore: provider.isLoadingMore,
+            hasMore: provider.hasMore,
+          );
+        }
+
+        final category = provider.categories[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: ImsCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.sell_outlined, color: AppColors.primary, size: 22),
+              ),
+              title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+              subtitle: category.description != null && category.description!.isNotEmpty
+                  ? Text(category.description!, style: AppTextStyles.caption.copyWith(fontSize: 13))
+                  : null,
+              trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+              onTap: () => _openForm(category),
+            ),
+          ),
+        );
+      },
     );
   }
 }

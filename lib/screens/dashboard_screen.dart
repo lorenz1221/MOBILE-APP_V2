@@ -7,6 +7,7 @@ import '../providers/product_provider.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
 import '../widgets/app_shell.dart';
+import '../utils/app_toast.dart';
 import '../widgets/common_widgets.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -24,12 +25,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _hasInitialized = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_hasInitialized) {
-      _hasInitialized = true;
-      _loadData();
-    }
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasInitialized && mounted) {
+        _hasInitialized = true;
+        _loadData();
+      }
+    });
   }
 
   Future<void> _loadData() async {
@@ -86,42 +89,77 @@ class _DashboardScreenState extends State<DashboardScreen> {
             )
           : null,
       body: RefreshIndicator(
-        onRefresh: _loadData,
+        color: AppColors.primary,
+        onRefresh: () async {
+          await _loadData();
+          if (!context.mounted) return;
+          AppToast.success(context, 'Dashboard refreshed');
+        },
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Inventory Operations Dashboard',
-                        style: AppTextStyles.headline.copyWith(fontSize: 20),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Track stock health, sales movement, and team activity in one place.',
-                        style: AppTextStyles.caption.copyWith(fontSize: 13),
-                      ),
-                    ],
-                  ),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                if (authProvider.isAdmin || authProvider.isStaff)
-                  TextButton.icon(
-                    onPressed: () => Navigator.of(context).pushNamed('/add_product'),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('New Product'),
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.28),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome back, ${authProvider.user?.name.split(' ').first ?? 'Team'}',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Operations Dashboard',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Track stock health, sales movement, and team activity.',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-              ],
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.analytics_outlined, color: Colors.white, size: 28),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             if (_isLoadingSummary && _summary == null)
@@ -213,12 +251,21 @@ class _LowStockSection extends StatelessWidget {
           else
             ...items.map((item) {
               return Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: AppColors.borderMuted, width: 0.5)),
                 ),
                 child: Row(
                   children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.warning,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       flex: 2,
                       child: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
@@ -227,12 +274,19 @@ class _LowStockSection extends StatelessWidget {
                       flex: 2,
                       child: Text(item.category, style: AppTextStyles.caption.copyWith(fontSize: 12)),
                     ),
-                    Text(
-                      '${item.stockQuantity}',
-                      style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.warning, fontSize: 13),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${item.stockQuantity}',
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.warning, fontSize: 12),
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    Text('${item.reorderLevel}', style: AppTextStyles.caption.copyWith(fontSize: 13)),
+                    const SizedBox(width: 8),
+                    Text('/${item.reorderLevel}', style: AppTextStyles.caption.copyWith(fontSize: 12)),
                   ],
                 ),
               );

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/supplier_provider.dart';
 import '../utils/constants.dart';
+import '../utils/app_toast.dart';
+import '../widgets/app_shell.dart';
 import '../widgets/common_widgets.dart';
 
 class SupplierFormScreen extends StatefulWidget {
@@ -74,25 +76,36 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
     setState(() => _isLoading = false);
 
     if (success && mounted) {
-      Navigator.of(context).pop();
+      AppToast.success(
+        context,
+        widget.supplier != null ? 'Supplier updated successfully' : 'Supplier created successfully',
+      );
+      Navigator.of(context).pop(true);
+    } else if (mounted && supplierProvider.error != null) {
+      AppToast.error(context, supplierProvider.error!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final title = widget.supplier != null ? 'Edit Supplier' : 'New Supplier';
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: AppColors.primary,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    return AppShell(
+      currentRoute: '/suppliers',
+      showDrawer: false,
+      title: title,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: ImsCard(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  widget.supplier != null ? 'Update supplier details' : 'Register a new supplier',
+                  style: AppTextStyles.caption.copyWith(fontSize: 13),
+                ),
+                const SizedBox(height: 20),
               CustomTextField(
                 controller: _nameController,
                 label: 'Name',
@@ -138,11 +151,13 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
                 text: widget.supplier != null ? 'Update Supplier' : 'Create Supplier',
                 onPressed: _saveSupplier,
                 isLoading: _isLoading,
+                icon: widget.supplier != null ? Icons.save_outlined : Icons.add_circle_outline,
               ),
             ],
           ),
         ),
       ),
+    ),
     );
   }
 }

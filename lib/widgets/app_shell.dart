@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../utils/app_toast.dart';
 import '../utils/constants.dart';
 import 'app_brand.dart';
 
@@ -11,6 +12,10 @@ class AppShell extends StatelessWidget {
   final Widget? floatingActionButton;
   final String currentRoute;
   final bool showDrawer;
+  /// Optional search field rendered below the AppBar.
+  final Widget? searchBar;
+  /// Footer slot — e.g. [PaginationFooter] for page buttons.
+  final Widget? bottomBar;
 
   const AppShell({
     super.key,
@@ -20,6 +25,8 @@ class AppShell extends StatelessWidget {
     this.floatingActionButton,
     required this.currentRoute,
     this.showDrawer = true,
+    this.searchBar,
+    this.bottomBar,
   });
 
   @override
@@ -36,10 +43,21 @@ class AppShell extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.borderMuted),
-        ),
+        bottom: searchBar != null
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(57),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    searchBar!,
+                    Container(height: 1, color: AppColors.borderMuted),
+                  ],
+                ),
+              )
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(height: 1, color: AppColors.borderMuted),
+              ),
         title: title != null
             ? Text(
                 title!,
@@ -97,6 +115,7 @@ class AppShell extends StatelessWidget {
         ],
       ),
       body: body,
+      bottomNavigationBar: bottomBar,
       floatingActionButton: floatingActionButton,
     );
   }
@@ -130,6 +149,12 @@ class _AppDrawer extends StatelessWidget {
                     icon: Icons.dashboard_outlined,
                     label: 'Dashboard',
                     route: '/dashboard',
+                    currentRoute: currentRoute,
+                  ),
+                  _DrawerTile(
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Products',
+                    route: '/products',
                     currentRoute: currentRoute,
                   ),
                   _DrawerTile(
@@ -167,6 +192,7 @@ class _AppDrawer extends StatelessWidget {
                   final navigator = Navigator.of(context);
                   await authProvider.logout();
                   if (context.mounted) {
+                    AppToast.info(context, 'You have been signed out');
                     navigator.pushNamedAndRemoveUntil('/login', (route) => false);
                   }
                 },
@@ -266,44 +292,67 @@ class MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ImsCard(
+    return Container(
       padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.bgLight,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderMuted),
+        boxShadow: [
+          BoxShadow(
+            color: iconColor.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label.toUpperCase(), style: AppTextStyles.label),
-                    const SizedBox(height: 6),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               Container(
-                height: 40,
-                width: 40,
+                height: 42,
+                width: 42,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      iconColor.withValues(alpha: 0.18),
+                      iconColor.withValues(alpha: 0.06),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.bgMain,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: iconColor, size: 20),
+                child: Icon(Icons.trending_up_rounded, size: 14, color: iconColor),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(trend, style: AppTextStyles.caption.copyWith(fontSize: 12)),
+          const Spacer(),
+          Text(label.toUpperCase(), style: AppTextStyles.label.copyWith(fontSize: 10)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(trend, style: AppTextStyles.caption.copyWith(fontSize: 11)),
         ],
       ),
     );

@@ -1,42 +1,94 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
+import 'paginated_list_mixin.dart';
 
-class CategoryProvider with ChangeNotifier {
+class CategoryProvider with ChangeNotifier, PaginatedListMixin<Category> {
   final ApiService _apiService = ApiService();
-  final List<Category> _categories = [];
-  bool _isLoading = false;
-  String? _error;
 
-  List<Category> get categories => _categories;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  List<Category> get categories => items;
 
+  /// GET /v1/categories?page=1&limit=15&search=query
   Future<void> fetchCategories({bool refresh = false}) async {
-    if (_isLoading) return;
-    _isLoading = true;
-    _error = null;
-    if (refresh) {
-      _categories.clear();
-    }
+    if (refresh) resetPagination();
+    if (!hasMore && !refresh) return;
+    if (isLoading || isLoadingMore) return;
+
+    final pageToFetch = currentPage;
+    final loadingMore = !refresh && items.isNotEmpty;
+    isLoading = !loadingMore;
+    isLoadingMore = loadingMore;
+    error = null;
     notifyListeners();
 
     try {
-      final response = await _apiService.getCategories();
+      final response = await _apiService.getCategories(
+        page: pageToFetch,
+        limit: 15,
+        search: searchQuery.isEmpty ? null : searchQuery,
+      );
+
       if (response.status == 'Success' && response.data != null) {
-        if (refresh) {
-          _categories.clear();
-        }
-        _categories.addAll(response.data!);
+        applyPaginatedResult(response.data!, refresh: refresh);
       } else {
-        _error = response.message;
+        setError(response.message.isNotEmpty ? response.message : 'Failed to load categories.');
       }
     } catch (e) {
-      _error = 'Failed to load categories: $e';
+      setError('Failed to load categories: $e');
     }
 
-    _isLoading = false;
+    isLoading = false;
+    isLoadingMore = false;
     notifyListeners();
+  }
+
+  Future<void> fetchPage(int page) async {
+    if (isLoading) return;
+    isLoading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.getCategories(
+        page: page,
+        limit: 15,
+        search: searchQuery.isEmpty ? null : searchQuery,
+      );
+
+      if (response.status == 'Success' && response.data != null) {
+        final paginated = response.data!;
+        items
+          ..clear()
+          ..addAll(paginated.data);
+        lastPage = paginated.lastPage;
+        total = paginated.total;
+        currentPage = page + 1;
+        hasMore = page < lastPage;
+      } else {
+        setError(response.message);
+      }
+    } catch (e) {
+      setError('Failed to load categories: $e');
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> search(String query) async {
+    searchQuery = query;
+    resetPagination();
+    await fetchCategories(refresh: true);
+  }
+
+  void goToPreviousPage() {
+    final page = displayPage;
+    if (page > 1) fetchPage(page - 1);
+  }
+
+  void goToNextPage() {
+    final page = displayPage;
+    if (page < lastPage) fetchPage(page + 1);
   }
 
   Future<bool> createCategory(String name, String? description) async {
@@ -46,13 +98,12 @@ class CategoryProvider with ChangeNotifier {
         'description': description,
       });
       if (response.status == 'Success' && response.data != null) {
-        _categories.insert(0, response.data!);
-        notifyListeners();
+        await fetchCategories(refresh: true);
         return true;
       }
-      _error = response.message;
+      setError(response.message);
     } catch (e) {
-      _error = 'Failed to create category: $e';
+      setError('Failed to create category: $e');
     }
     notifyListeners();
     return false;
@@ -65,16 +116,16 @@ class CategoryProvider with ChangeNotifier {
         'description': description,
       });
       if (response.status == 'Success' && response.data != null) {
-        final index = _categories.indexWhere((category) => category.id == id);
+        final index = items.indexWhere((c) => c.id == id);
         if (index != -1) {
-          _categories[index] = response.data!;
+          items[index] = response.data!;
           notifyListeners();
         }
         return true;
       }
-      _error = response.message;
+      setError(response.message);
     } catch (e) {
-      _error = 'Failed to update category: $e';
+      setError('Failed to update category: $e');
     }
     notifyListeners();
     return false;
@@ -84,20 +135,20 @@ class CategoryProvider with ChangeNotifier {
     try {
       final response = await _apiService.deleteCategory(id);
       if (response.status == 'Success') {
-        _categories.removeWhere((category) => category.id == id);
+        items.removeWhere((c) => c.id == id);
         notifyListeners();
         return true;
       }
-      _error = response.message;
+      setError(response.message);
     } catch (e) {
-      _error = 'Failed to delete category: $e';
+      setError('Failed to delete category: $e');
     }
     notifyListeners();
     return false;
   }
 
   void clearError() {
-    _error = null;
+    error = null;
     notifyListeners();
   }
 }

@@ -66,7 +66,11 @@ class PaginatedResponse<T> {
     Map<String, dynamic> meta = {};
 
     if (source is Map<String, dynamic>) {
-      if (source.containsKey('items')) {
+      if (source['data'] is List<dynamic>) {
+        // Laravel default: { data: [...], current_page, last_page, total, ... }
+        items = List<dynamic>.from(source['data']);
+        meta = source;
+      } else if (source.containsKey('items')) {
         items = List<dynamic>.from(source['items'] ?? []);
         meta = Map<String, dynamic>.from(source['meta'] ?? source);
       } else {

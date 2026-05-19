@@ -4,6 +4,8 @@ import '../providers/product_provider.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
+import '../utils/app_toast.dart';
+import '../widgets/app_shell.dart';
 import '../widgets/common_widgets.dart';
 
 class AddEditProductScreen extends StatefulWidget {
@@ -79,10 +81,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     });
 
     try {
-      final response = await _apiService.getSuppliers();
+      final response = await _apiService.getSuppliers(limit: 100);
       if (response.status == 'Success' && response.data != null) {
         setState(() {
-          _suppliers = response.data!;
+          _suppliers = response.data!.data;
         });
       } else {
         setState(() {
@@ -107,10 +109,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     });
 
     try {
-      final response = await _apiService.getCategories();
+      final response = await _apiService.getCategories(limit: 100);
       if (response.status == 'Success' && response.data != null) {
         setState(() {
-          _categories = response.data!;
+          _categories = response.data!.data;
         });
       } else {
         setState(() {
@@ -163,25 +165,35 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     setState(() => _isLoading = false);
 
     if (success && mounted) {
+      AppToast.success(
+        context,
+        widget.product != null ? 'Product updated successfully' : 'Product created successfully',
+      );
       Navigator.of(context).pop();
+    } else if (mounted && productProvider.error != null) {
+      AppToast.error(context, productProvider.error!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final productProvider = Provider.of<ProductProvider>(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.product != null ? 'Edit Product' : 'Add Product'),
-        backgroundColor: AppColors.primary,
-      ),
+    return AppShell(
+      currentRoute: '/dashboard',
+      showDrawer: false,
+      title: widget.product != null ? 'Edit Product' : 'Add Product',
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
+        padding: const EdgeInsets.all(16),
+        child: ImsCard(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.product != null ? 'Update product details' : 'Create a new product',
+                  style: AppTextStyles.caption.copyWith(fontSize: 13),
+                ),
+                const SizedBox(height: 20),
               CustomTextField(
                 controller: _nameController,
                 label: 'Product Name',
@@ -310,19 +322,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 text: widget.product != null ? 'Update Product' : 'Add Product',
                 onPressed: _saveProduct,
                 isLoading: _isLoading,
+                icon: widget.product != null ? Icons.save_outlined : Icons.add_circle_outline,
               ),
-              if (productProvider.error != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  productProvider.error!,
-                  style: const TextStyle(color: AppColors.error),
-                  textAlign: TextAlign.center,
-                ),
-              ],
             ],
           ),
         ),
       ),
+    ),
     );
   }
 }

@@ -281,15 +281,29 @@ class ApiService {
     );
   }
 
-  Future<ApiResponse<List<Category>>> getCategories() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/v1/categories'),
-      headers: await _getHeaders(),
-    );
+  Future<ApiResponse<PaginatedResponse<Category>>> getCategories({
+    int page = 1,
+    int limit = 15,
+    String? search,
+  }) async {
+    final queryParams = {
+      'page': page.toString(),
+      'limit': limit.toString(),
+      if (search?.isNotEmpty == true) 'search': search!,
+    };
 
+    final uri = Uri.parse('$baseUrl/v1/categories').replace(queryParameters: queryParams);
+    final response = await http.get(uri, headers: await _getHeaders());
     final data = jsonDecode(response.body);
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return ApiResponse.fromJson(data, (d) => List<Category>.from((d as List<dynamic>).map((item) => Category.fromJson(item))));
+      return ApiResponse.fromJson(
+        data,
+        (d) => PaginatedResponse<Category>.fromJson(
+          d is Map<String, dynamic> ? d : {'data': d},
+          (item) => Category.fromJson(item),
+        ),
+      );
     }
 
     return ApiResponse(
@@ -351,15 +365,29 @@ class ApiService {
     return ApiResponse(status: 'Error', message: 'Failed to delete category.', data: null);
   }
 
-  Future<ApiResponse<List<Supplier>>> getSuppliers() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/v1/suppliers'),
-      headers: await _getHeaders(),
-    );
+  Future<ApiResponse<PaginatedResponse<Supplier>>> getSuppliers({
+    int page = 1,
+    int limit = 15,
+    String? search,
+  }) async {
+    final queryParams = {
+      'page': page.toString(),
+      'limit': limit.toString(),
+      if (search?.isNotEmpty == true) 'search': search!,
+    };
 
+    final uri = Uri.parse('$baseUrl/v1/suppliers').replace(queryParameters: queryParams);
+    final response = await http.get(uri, headers: await _getHeaders());
     final data = jsonDecode(response.body);
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return ApiResponse.fromJson(data, (d) => List<Supplier>.from((d as List<dynamic>).map((item) => Supplier.fromJson(item))));
+      return ApiResponse.fromJson(
+        data,
+        (d) => PaginatedResponse<Supplier>.fromJson(
+          d is Map<String, dynamic> ? d : {'data': d},
+          (item) => Supplier.fromJson(item),
+        ),
+      );
     }
 
     return ApiResponse(

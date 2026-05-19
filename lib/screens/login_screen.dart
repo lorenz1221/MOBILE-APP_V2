@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/constants.dart';
+import '../utils/app_toast.dart';
 import '../widgets/app_brand.dart';
 import '../widgets/common_widgets.dart';
 
@@ -35,7 +36,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (success && mounted) {
+      AppToast.success(context, 'Welcome back!');
       Navigator.of(context).pushReplacementNamed('/dashboard');
+    } else if (mounted && authProvider.error != null) {
+      AppToast.error(context, authProvider.error!);
     }
   }
 
